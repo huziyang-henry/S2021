@@ -6,6 +6,11 @@
 
 constexpr double MY_PI = 3.1415926;
 
+float Angle2Radian(float angle)
+{
+    return angle * MY_PI / 180.;
+}
+
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
@@ -29,6 +34,18 @@ Eigen::Matrix4f get_model_matrix(float rotation_angle)
     // Create the model matrix for rotating the triangle around the Z axis.
     // Then return it.
 
+    auto a = Angle2Radian(rotation_angle);
+    auto sinA = sin(a);
+    auto cosA = cos(a);
+
+    Eigen::Matrix4f rotation;
+    rotation << cosA, -sinA, 0, 0, 
+                sinA, cosA, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1;
+    
+    model = rotation * model;
+
     return model;
 }
 
@@ -36,12 +53,42 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                                       float zNear, float zFar)
 {
     // Students will implement this function
-
     Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
 
     // TODO: Implement this function
     // Create the projection matrix for the given parameters.
     // Then return it.
+    float halfAngle = eye_fov / 2.;
+    float halfRadian = Angle2Radian(halfAngle);
+    float tanA = tan(halfRadian);
+
+    float t = zNear * tanA;
+    float b = -t;
+    float l = b * aspect_ratio;
+    float r = -l;
+    float n = -zNear;
+    float f = -zFar;
+
+    Eigen::Matrix4f M_scale;
+    M_scale << 2 / (r - l), 0 ,0 ,0,
+               0, 2 / (t - b), 0, 0,
+               0, 0, 2 / (n - f), 0,
+               0, 0, 0, 1;
+
+    Eigen::Matrix4f M_translate;
+    M_translate << 1, 0, 0, (r + l) / 2.,
+                   0, 1, 0, (t + b) / 2.,
+                   0, 0, 1, (n + f) / 2.,
+                   0, 0, 0, 1;
+
+    Eigen::Matrix4f M_persp_ortho;
+    M_persp_ortho << n, 0, 0, 0,
+                     0, n, 0, 0,
+                     0 ,0, n + f, -n * f,
+                     0, 0, 1, 0;
+
+    Eigen::Matrix4f M_ortho = M_scale * M_translate;
+    projection =  M_ortho * M_persp_ortho;
 
     return projection;
 }
@@ -107,7 +154,7 @@ int main(int argc, const char **argv)
 
         cv::imshow("image", image);
         key = cv::waitKey(10);
-        std::cout << "frame count: " << frame_count++ << '\n';
+        // std::cout << "frame count: " << frame_count++ << '\n';
 
         if (key == 'a')
         {
