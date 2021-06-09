@@ -11,6 +11,37 @@ float Angle2Radian(float angle)
     return angle * MY_PI / 180.;
 }
 
+Eigen::Matrix4f get_rotation(Vector3f axis, float angle)
+{
+    Eigen::Matrix4f rotation;
+
+    float a = Angle2Radian(angle);
+    float cosA = cos(a);
+    float sinA = sin(a);
+
+    auto I = Eigen::Matrix3f::Identity();
+    auto n = axis;
+    auto nT = n.transpose();
+
+    float x = n.x();
+    float y = n.x();
+    float z = n.x();
+
+    Eigen::Matrix3f N;
+    N <<  0, -z,  y,
+          z,  0, -x,
+         -y,  x,  0;
+
+    Eigen::Matrix3f R = cosA * I + (1 - cosA) * n * nT + sinA * N;
+
+    rotation << R(0, 0), R(0, 1), R(0, 2), 0, 
+                R(1, 0), R(1, 1), R(1, 2), 0, 
+                R(2, 0), R(2, 1), R(2, 2), 0, 
+                0, 0, 0, 1;
+
+    return rotation;
+}
+
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
@@ -58,7 +89,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
     // TODO: Implement this function
     // Create the projection matrix for the given parameters.
     // Then return it.
-    float halfAngle = eye_fov / 2.;
+    float halfAngle = eye_fov / 2;
     float halfRadian = Angle2Radian(halfAngle);
     float tanA = tan(halfRadian);
 
@@ -76,9 +107,9 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                0, 0, 0, 1;
 
     Eigen::Matrix4f M_translate;
-    M_translate << 1, 0, 0, (r + l) / 2.,
-                   0, 1, 0, (t + b) / 2.,
-                   0, 0, 1, (n + f) / 2.,
+    M_translate << 1, 0, 0, (r + l) / 2,
+                   0, 1, 0, (t + b) / 2,
+                   0, 0, 1, (n + f) / 2,
                    0, 0, 0, 1;
 
     Eigen::Matrix4f M_persp_ortho;
@@ -154,7 +185,7 @@ int main(int argc, const char **argv)
 
         cv::imshow("image", image);
         key = cv::waitKey(10);
-        // std::cout << "frame count: " << frame_count++ << '\n';
+        std::cout << "frame count: " << frame_count++ << '\n';
 
         if (key == 'a')
         {

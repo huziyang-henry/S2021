@@ -34,10 +34,10 @@ namespace rst
     };
 
     /*
- * For the curious : The draw function takes two buffer id's as its arguments.
- * These two structs make sure that if you mix up with their orders, the
- * compiler won't compile it. Aka : Type safety
- * */
+    * For the curious : The draw function takes two buffer id's as its arguments.
+    * These two structs make sure that if you mix up with their orders, the
+    * compiler won't compile it. Aka : Type safety
+    * */
     struct pos_buf_id
     {
         int pos_id = 0;
