@@ -75,10 +75,15 @@ namespace rst
 
         std::vector<Eigen::Vector3f>& frame_buffer() { return frame_buf; }
 
+        bool use_super_sampling;
+        
     private:
         void draw_line(Eigen::Vector3f begin, Eigen::Vector3f end);
 
         void rasterize_triangle(const Triangle& t);
+
+        void normal_sampling(int i, int j, const Triangle& t, const std::array<Vector4f, 3>& v);
+        void super_sampling(int i, int j, const Triangle& t, const std::array<Vector4f, 3>& v);
 
         // VERTEX SHADER -> MVP -> Clipping -> /.W -> VIEWPORT -> DRAWLINE/DRAWTRI -> FRAGSHADER
 
@@ -94,6 +99,7 @@ namespace rst
         std::vector<Eigen::Vector3f> frame_buf;
 
         std::vector<float> depth_buf;
+        std::vector<std::array<float, 4>> super_sampling_depth_buf;
         int get_index(int x, int y);
 
         int width, height;

@@ -158,6 +158,12 @@ int main(int argc, const char** argv)
         key = cv::waitKey(10);
 
         std::cout << "frame count: " << frame_count++ << '\n';
+
+        if(key == 's')
+        {
+            r.use_super_sampling = !r.use_super_sampling;
+            std::cout << "super_sampling " << (r.use_super_sampling ? "open" : "close") << std::endl;
+        }
     }
 
     return 0;

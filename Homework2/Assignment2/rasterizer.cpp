@@ -143,22 +143,71 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     {
         for(int j = aabb_minY; j < aabb_maxY; j++)
         {
-            float x = i + 0.5f;
-            float y = j + 0.5f;
+            if(use_super_sampling)
+            {
+                super_sampling(i, j, t, v);
+            }
+            else
+            {
+                normal_sampling(i, j, t, v);
+            }
+        }
+    }
+}
+
+void rst::rasterizer::normal_sampling(int i, int j, const Triangle& t, const std::array<Vector4f, 3>& v)
+{
+    float x = i + 0.5f;
+    float y = j + 0.5f;
+    bool isInside = insideTriangle(x, y, t.v);
+    if(isInside)
+    {
+        auto z_interpolated = computeZ(x, y, t, v);
+        auto z = std::abs(z_interpolated);
+
+        auto index = get_index(i, j);
+        if(depth_buf[index] > z)
+        {
+            depth_buf[index] = z;
+            set_pixel(Vector3f(i, j, 1), t.getColor());
+        }
+    }
+}
+
+void rst::rasterizer::super_sampling(int i, int j, const Triangle& t, const std::array<Vector4f, 3>& v)
+{
+    int index = get_index(i, j);
+    auto& super_sampling_depth = super_sampling_depth_buf[index];
+    int count = 0;
+
+    for(int ki = 0; ki < 2; ki++)
+    {
+        for(int kj = 0; kj < 2; kj++)
+        {
+            float x = i + 0.5f * ki + 0.25f;
+            float y = j + 0.5f * kj + 0.25f;
+            float k = 2 * ki + kj;
+
             bool isInside = insideTriangle(x, y, t.v);
             if(isInside)
             {
-                auto z_interpolated = computeZ(x, y, t, v);
-                auto z = std::abs(z_interpolated);
+                float z_interpolated = computeZ(x, y, t, v);
+                float z = std::abs(z_interpolated);
 
-                auto index = get_index(i, j);
-                if(depth_buf[index] > z)
+                if(super_sampling_depth[k] > z)
                 {
-                    depth_buf[index] = z;
-                    set_pixel(Vector3f(i, j, 1), t.getColor());
+                    super_sampling_depth[k] = z;
+                    count ++;
                 }
             }
         }
+    }
+
+    if(count > 0)
+    {
+        auto rate = count * 0.25f;
+        auto cur_pixel = frame_buf[index];
+        set_pixel(Vector3f(i, j, 1), t.getColor() * rate + cur_pixel * (1 - rate));
     }
 }
 
@@ -185,7 +234,10 @@ void rst::rasterizer::clear(rst::Buffers buff)
     }
     if ((buff & rst::Buffers::Depth) == rst::Buffers::Depth)
     {
-        std::fill(depth_buf.begin(), depth_buf.end(), std::numeric_limits<float>::infinity());
+        float i = std::numeric_limits<float>::infinity();
+        std::array<float, 4> v = {i, i, i, i};
+        std::fill(depth_buf.begin(), depth_buf.end(), i);
+        std::fill(super_sampling_depth_buf.begin(), super_sampling_depth_buf.end(), v);
     }
 }
 
@@ -193,6 +245,8 @@ rst::rasterizer::rasterizer(int w, int h) : width(w), height(h)
 {
     frame_buf.resize(w * h);
     depth_buf.resize(w * h);
+    super_sampling_depth_buf.resize(w * h);
+    use_super_sampling = false;
 }
 
 int rst::rasterizer::get_index(int x, int y)
