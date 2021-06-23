@@ -40,7 +40,7 @@ auto to_vec4(const Eigen::Vector3f& v3, float w = 1.0f)
 }
 
 
-static bool insideTriangle(int x, int y, const Vector3f* _v)
+static bool insideTriangle(float x, float y, const Vector3f* _v)
 {   
     // TODO : Implement this function to check if the point (x, y) is inside the triangle represented by _v[0], _v[1], _v[2]
     auto p = Vector3f(x, y, 0);
@@ -126,17 +126,17 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     auto v = t.toVector4();
     
     // TODO : Find out the bounding box of current triangle.
-    float minX = std::min({v[0].x(), v[1].x(), v[2].x(), (float)width});
-    float maxX = std::max({v[0].x(), v[1].x(), v[2].x(), 0.f});
+    float minX = std::min({v[0].x(), v[1].x(), v[2].x()});
+    float maxX = std::max({v[0].x(), v[1].x(), v[2].x()});
     
-    float minY = std::min({v[0].y(), v[1].y(), v[2].y(), (float)height});
-    float maxY = std::max({v[0].y(), v[1].y(), v[2].y(), 0.f});
+    float minY = std::min({v[0].y(), v[1].y(), v[2].y()});
+    float maxY = std::max({v[0].y(), v[1].y(), v[2].y()});
 
-    int aabb_minX = std::floor(minX);
-    int aabb_maxX = std::ceil(maxX);
+    int aabb_minX = std::max((int)std::floor(minX), 0);
+    int aabb_maxX = std::min((int)std::ceil(maxX), width);
 
-    int aabb_minY = std::floor(minY);
-    int aabb_maxY = std::ceil(maxY);
+    int aabb_minY = std::max((int)std::floor(minY), 0);
+    int aabb_maxY = std::min((int)std::ceil(maxY), height);
 
     // iterate through the pixel and find if the current pixel is inside the triangle
     for(int i = aabb_minX; i < aabb_maxX; i++)
