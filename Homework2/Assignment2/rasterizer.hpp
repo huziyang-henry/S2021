@@ -8,6 +8,7 @@
 #include <algorithm>
 #include "global.hpp"
 #include "Triangle.hpp"
+#include <array>
 using namespace Eigen;
 
 namespace rst
