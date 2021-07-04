@@ -6,6 +6,7 @@
 #include "rasterizer.hpp"
 #include <opencv2/opencv.hpp>
 #include <math.h>
+#include <array>
 
 rst::pos_buf_id rst::rasterizer::load_positions(const std::vector<Eigen::Vector3f> &positions)
 {
