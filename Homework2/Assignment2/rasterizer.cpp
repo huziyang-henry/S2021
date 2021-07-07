@@ -207,7 +207,7 @@ void rst::rasterizer::super_sampling(int i, int j, const Triangle& t, const std:
     {
         auto rate = count * 0.25f;
         auto cur_pixel = frame_buf[index];
-        set_pixel(Vector3f(i, j, 1), t.getColor() * rate + cur_pixel * (1 - rate));
+        set_pixel(Vector3f(i, j, 1), t.getColor() * rate + cur_pixel);
     }
 }
 
