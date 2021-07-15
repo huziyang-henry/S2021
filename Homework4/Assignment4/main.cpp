@@ -56,50 +56,76 @@ double distance(cv::Point2f p1, cv::Point2f p2)
 }
 
 void anti_aliasing(const cv::Point2f &point, cv::Mat &window)
-{
-    int x = std::round(point.x);
-    int y = std::round(point.y);
-    
-    auto centerOffset = cv::Point2f(0.5f, 0.5f);
-    auto p = cv::Point2f((int)point.x, (int)point.y);
-    auto c = p + centerOffset;
-    auto d = distance(point, c);
-
-    int startX = x - 1;
-    int startY = y - 1;
-    for(int i = 0; i < 2; i++)
+{    
+    int x, y;
+    const int N = 3;
+    if((N % 2) == 0)
     {
-        for(int j = 0; j < 2; j++)
+        x = std::round(point.x);
+        y = std::round(point.y);
+    }
+    else
+    {
+        x = point.x;
+        y = point.y;
+    }
+
+    auto min_d = sqrt(2) / 2;
+    auto max_d = N * min_d;
+
+    auto min_color = 255;
+    auto max_color = 0;
+
+    int startX = x - N / 2;
+    int startY = y - N / 2;
+    for(int i = 0; i < N; i++)
+    {
+        for(int j = 0; j < N; j++)
         {
-            auto pos = cv::Point2f(startX + i, startY + i);
-            auto center = pos + centerOffset;
-            auto dis = distance(point, center);
+            auto p = cv::Point2f(startX + i + 0.5f, startY + j + 0.5f);
+            auto d = distance(point, p);
+
+            float t = 0.0;
+            if(d < min_d)
+            {
+                t = 0;
+            }
+            else if(d > max_d)
+            {
+                t = 1;
+            }
+            else
+            {
+                t = (d - min_d) / (max_d - min_d);
+            }
             
-            auto color = window.at<cv::Vec3b>(center.y, center.x)[1];
-            color = std::max(255 * (d / dis), (double)color);
-            window.at<cv::Vec3b>(center.y, center.x)[1] = color;
+            auto color = window.at<cv::Vec3b>(p.y, p.x)[1];
+            color = std::max(min_color + t * (max_color - min_color), (float)color);
+            window.at<cv::Vec3b>(p.y, p.x)[1] = color;
         }
     }
 }
 
-void bezier(const std::vector<cv::Point2f> &control_points, cv::Mat &window, bool useAA) 
+void bezier_anti_aliasing(const std::vector<cv::Point2f> &control_points, cv::Mat &window)
+{
+    for (double t = 0.0; t <= 1.0; t += 0.001) 
+    {
+        auto point = recursive_bezier(control_points, t);
+        anti_aliasing(point, window);
+    }
+}
+
+void bezier(const std::vector<cv::Point2f> &control_points, cv::Mat &window) 
 {
     // TODO: Iterate through all t = 0 to t = 1 with small steps, and call de Casteljau's 
     // recursive Bezier algorithm.
     for (double t = 0.0; t <= 1.0; t += 0.001) 
     {
         auto point = recursive_bezier(control_points, t);
-        
-        if(useAA)
-        {
-            anti_aliasing(point, window);
-        }
-        else
-        {
-            window.at<cv::Vec3b>(point.y, point.x)[1] = 255;
-        }
+        window.at<cv::Vec3b>(point.y, point.x)[1] = 255;
     }
 }
+
 
 int main() 
 {
@@ -120,12 +146,13 @@ int main()
         if (control_points.size() == 4) 
         {
             // naive_bezier(control_points, window);
-            bezier(control_points, window, false);
+            bezier(control_points, window);
 
             cv::imshow("Bezier Curve", window);
             cv::imwrite("my_bezier_curve.png", window);
 
-            bezier(control_points, window, true);
+            // anti aliasing
+            bezier_anti_aliasing(control_points, window);
             cv::imwrite("my_bezier_curve_aa.png", window);
 
             key = cv::waitKey(0);
